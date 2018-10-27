@@ -1,2 +1,2 @@
-CREATE TABLE IF NOT EXISTS room(kdno TEXT, kcno TEXT, ccno TEXT, kdname TEXT, exptime TEXT, papername TEXT)ENGINE=InnoDB DEFAULT CHARSET=utf8;
-CREATE TABLE IF NOT EXISTS student(registno TEXT, name TEXT, kdno TEXT, kcno TEXT, ccno TEXT, seat TEXT)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS room(kdno CHAR(100), kcno CHAR(100), ccno CHAR(100), kdname CHAR(100), exptime CHAR(100), papername CHAR(100), PRIMARY KEY(kdno,kcno,ccno,kdname))ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE IF NOT EXISTS student(registno CHAR(100), name CHAR(100), kdno CHAR(100), kcno CHAR(100), ccno CHAR(100), seat CHAR(100), PRIMARY KEY(registno))ENGINE=InnoDB DEFAULT CHARSET=utf8;

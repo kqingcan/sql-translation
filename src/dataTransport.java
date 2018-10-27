@@ -1,5 +1,7 @@
 
 import com.csvreader.CsvReader;
+
+import javax.lang.model.element.NestingKind;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -8,8 +10,8 @@ import java.sql.*;
 import java.util.Scanner;
 
 public class dataTransport {
-    public static void main(String[] args) throws SQLException, IOException {
-        System.out.println("hello world");
+    public static void main(String[] args){
+
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
@@ -28,19 +30,61 @@ public class dataTransport {
             System.out.println("数据库连接失败");
             System.out.println(e.getMessage());
         }
-        String sql = "create database if not exists lab1";
-        Statement stmt = connection.createStatement();
-        stmt.execute(sql);
-        stmt.execute("use lab1");
-        Scanner scanner = new Scanner(new File("createTable.txt"));
-        while (scanner.hasNext()) {
-            String temp = scanner.nextLine();
-            System.out.println(temp);
-            stmt.execute(temp);
+        String createDatabase = "create database if not exists lab1";
+        Statement  stmt =null;
+        Scanner input = new Scanner(System.in);
+        try {
+            stmt = connection.createStatement();
+            stmt.execute(createDatabase);
+            stmt.execute("use lab1");
+            System.out.println("请输入初始化表的文件名称：");
+            String initTableFile = input.nextLine();
+            Scanner scanner = new Scanner(new File(initTableFile));
+            while (scanner.hasNext()) {
+                String temp = scanner.nextLine();
+                System.out.println(temp);
+                stmt.execute(temp);
+            }
+            System.out.println("数据库表格初始化完成。");
+
+            do {
+                System.out.println("清选择导入mysql数据库的方式：");
+                System.out.println("1、从csv文件读入；");
+                System.out.println("2、从SQlite数据库导入");
+                System.out.println("3: 退出");
+                String choice = input.nextLine();
+                switch (choice){
+                    case "1":
+                        System.out.println("请输入csv文件名：");
+                        String csvFilename = input.nextLine();
+                        StringBuilder temp1= insertToMysql(connection,csvFilename);
+                        System.out.println("数据导入成功！其中重复的有：");
+                        System.out.println(temp1);
+                        break;
+                    case "2":
+                        System.out.println("请输入sqlite数据库文件名称：");
+                        String sqliteFilename = input.nextLine();
+                        StringBuilder temp2= insertFromSQLite(connection,sqliteFilename);
+                        System.out.println("数据导入成功！其中重复的有：");
+                        System.out.println(temp2);
+                        break;
+                    case "3":
+                        System.exit(0);
+                    default:
+                        break;
+                }
+
+            }while (true);
+
+        }catch (SQLException e){
+            System.out.println(e.getMessage());
+        }catch (IOException e){
+            System.out.println(e.getMessage());
         }
+
 //        String filename = "room.csv";
 //        insertToMysql(connection,filename);
-        insertFromSQLite(connection, "xxxdatabase.db");
+//        insertFromSQLite(connection, "xxxdatabase.db");
     }
 
     public static CsvReader readDataFromFile(String filename) throws IOException {
@@ -56,7 +100,7 @@ public class dataTransport {
 
     }
 
-    public static void insertToMysql(Connection connection, String filename) throws IOException, SQLException {
+    public static StringBuilder insertToMysql(Connection connection, String filename) throws IOException, SQLException {
         CsvReader csvReader1 = readDataFromFile(filename);
         String headers[] = csvReader1.getHeaders();
         String table = filename.split("\\.")[0];
@@ -75,19 +119,25 @@ public class dataTransport {
         System.out.println(insertSQL);
 
         PreparedStatement preInsert = connection.prepareStatement(insertSQL);
+        StringBuilder dupliteSql = new StringBuilder();
         while (csvReader1.readRecord()) {
             for (int i = 0; i < headers.length; i++) {
                 preInsert.setString(i + 1, csvReader1.get(headers[i]));
             }
-            preInsert.execute();
+            try {
+                preInsert.execute();
+            }catch (SQLException e){
+                dupliteSql.append(preInsert).append("\n");
+            }
         }
+        return dupliteSql;
     }
 
-    public static void insertFromSQLite(Connection connection, String filename) throws SQLException {
+    public static StringBuilder insertFromSQLite(Connection connection, String filename) throws SQLException {
         Connection c = null;
         try {
             Class.forName("org.sqlite.JDBC");
-            c = DriverManager.getConnection("jdbc:sqlite:xxxdatabase.db");
+            c = DriverManager.getConnection("jdbc:sqlite:"+filename);
         } catch (Exception e) {
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(0);
@@ -100,6 +150,7 @@ public class dataTransport {
             String tableTemp = tables.getString("tbl_name");
             tableList.add(tableTemp);
         }
+        StringBuilder dupliteSql = new StringBuilder();
         for (String table : tableList) {
             String sqlTemp = "SELECT * FROM " + table;
             ResultSet resTemp = statement.executeQuery(sqlTemp);
@@ -118,20 +169,21 @@ public class dataTransport {
             }
             insertSQL = insertSQL + ")";
             PreparedStatement preInsert = connection.prepareStatement(insertSQL);
-            StringBuilder sql = new StringBuilder();
+
             while (resTemp.next()) {
                 for (int i = 0; i < rm.getColumnCount(); i++) {
                     preInsert.setString(i + 1, resTemp.getString(i + 1));
                 }
-//                System.out.println(preInsert);
-                if (!preInsert.execute()) {
-                    sql.append(preInsert).append("\n");
+                try {
+                    preInsert.execute();
+                }catch (SQLException e){
+                    dupliteSql.append(preInsert).append("\n");
                 }
 
+
             }
-            System.out.println(sql);
+
         }
-
-
+        return dupliteSql;
     }
 }
