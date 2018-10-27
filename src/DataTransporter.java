@@ -7,19 +7,23 @@ import java.util.List;
 import java.sql.*;
 import java.util.Scanner;
 
-public class dataTransport {
-    private static String url = "jdbc:mysql://localhost:3306/mysql?characterEncoding=UTF-8";
-    private static String username = "root";
-    private static String password = "123456";
+public class DataTransporter {
+    private String url = "jdbc:mysql://localhost:3306/mysql?characterEncoding=UTF-8";
+    private String username = "root";
+    private String password = "123456";
 
-
-    public static void main(String[] args){
+    public DataTransporter(){
         loadMysqlDriver();
-        Connection connection = connectToMysql();
-        interactiveInTerminal(connection);
     }
 
-    public static void loadMysqlDriver(){
+    public DataTransporter(String url, String username, String password){
+        this.url = url;
+        this.username = username;
+        this.password = password;
+        loadMysqlDriver();
+    }
+
+    private void loadMysqlDriver(){
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
 
@@ -29,10 +33,10 @@ public class dataTransport {
         }
     }
 
-    public static Connection connectToMysql(){
+    private Connection connectToMysql(){
         Connection connection = null;
         try {
-            connection = DriverManager.getConnection(url, username, password);
+            connection = DriverManager.getConnection(this.url, this.username, this.password);
 
         } catch (Exception e) {
             System.out.println("数据库连接失败");
@@ -41,7 +45,7 @@ public class dataTransport {
         return connection;
     }
 
-    public static Connection loadSQLiteDriver(String filename){
+    private Connection loadSQLiteDriver(String filename){
         Connection connection = null;
         try {
             Class.forName("org.sqlite.JDBC");
@@ -54,7 +58,7 @@ public class dataTransport {
         return connection;
     }
 
-    public static CsvReader readDataFromFile(String filename){
+    private CsvReader readDataFromFile(String filename){
         CsvReader csvReader = null;
         try {
             csvReader = new CsvReader(new FileInputStream(filename), Charset.forName("utf-8"));
@@ -65,7 +69,7 @@ public class dataTransport {
         return csvReader;
     }
 
-    public static StringBuilder insertToMysql(Connection connection, String filename) throws IOException, SQLException {
+    private StringBuilder insertFromCsv(Connection connection, String filename) throws IOException, SQLException {
         CsvReader csvReader1 = readDataFromFile(filename);
         String headers[] = csvReader1.getHeaders();
         String table = filename.split("\\.")[0];
@@ -85,7 +89,7 @@ public class dataTransport {
         return dupliteSql;
     }
 
-    public static StringBuilder insertFromSQLite(Connection connection, String filename) throws SQLException {
+    private StringBuilder insertFromSQLite(Connection connection, String filename) throws SQLException {
         Connection sqliteConnection = loadSQLiteDriver(filename);
         Statement statement = sqliteConnection.createStatement();
         String getTables = "SELECT tbl_name FROM sqlite_master";
@@ -121,7 +125,7 @@ public class dataTransport {
         return dupliteSql;
     }
 
-    public static String generateInsertSQL(String[] headers, String table){
+    private String generateInsertSQL(String[] headers, String table){
         String insertSQL = "INSERT INTO "+ table +"(";
         for (int i = 0; i < headers.length; i++) {
             String head = headers[i];
@@ -138,7 +142,7 @@ public class dataTransport {
         return insertSQL;
     }
 
-    public static void interactiveInTerminal(Connection connection){
+    private void interactiveInTerminal(Connection connection){
         try {
             String createDatabase = "create database if not exists lab1";
             Statement  stmt = null;
@@ -166,7 +170,7 @@ public class dataTransport {
                     case "1":
                         System.out.println("请输入csv文件名：");
                         String csvFilename = input.nextLine();
-                        StringBuilder temp1= insertToMysql(connection,csvFilename);
+                        StringBuilder temp1= insertFromCsv(connection,csvFilename);
                         System.out.println("数据导入成功！其中重复的有：");
                         System.out.println(temp1);
                         break;
@@ -190,5 +194,11 @@ public class dataTransport {
             System.out.println(e.getMessage());
         }
 
+
+    }
+
+    public void run(){
+        Connection connection = connectToMysql();
+        interactiveInTerminal(connection);
     }
 }

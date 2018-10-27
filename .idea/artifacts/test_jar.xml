@@ -2,7 +2,7 @@
   <artifact type="jar" name="test:jar">
     <output-path>$PROJECT_DIR$/out/artifacts/test_jar</output-path>
     <root id="archive" name="test.jar">
-      <element id="module-output" name="test" />
+      <element id="module-output" name="dataTransport" />
       <element id="extracted-dir" path="$PROJECT_DIR$/sqlite-jdbc-3.23.1.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/javacsv-2.1.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/mysql-connector-java-8.0.13.jar" path-in-jar="/" />
