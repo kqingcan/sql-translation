@@ -32,7 +32,7 @@
       <Position>4</Position>
       <DataType>TEXT|0s</DataType>
     </column>
-    <column id="13" parent="6" name="time">
+    <column id="13" parent="6" name="exptime">
       <Position>5</Position>
       <DataType>TEXT|0s</DataType>
     </column>
