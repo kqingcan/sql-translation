@@ -49,7 +49,7 @@ public class DataTransporter {
         Connection connection = null;
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:"+filename);
+            connection = DriverManager.getConnection("jdbc:sqlite:databases/"+filename);
         } catch (Exception e) {
             System.out.println("sqlite数据库连接错误！");
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
@@ -61,7 +61,7 @@ public class DataTransporter {
     private CsvReader readDataFromFile(String filename){
         CsvReader csvReader = null;
         try {
-            csvReader = new CsvReader(new FileInputStream(filename), Charset.forName("utf-8"));
+            csvReader = new CsvReader(new FileInputStream("databases/"+filename), Charset.forName("utf-8"));
             csvReader.readHeaders();
         } catch (IOException e) {
             e.printStackTrace();
