@@ -10,7 +10,7 @@ import java.sql.*;
 import java.util.Scanner;
 
 public class DataTransporter {
-    private String url = "jdbc:mysql://localhost:3306/mysql?characterEncoding=UTF-8";
+    private String url = "jdbc:mysql://localhost:3306/mysql?characterEncoding=UTF-8&&serverTimezone=UTC";
     private String username = "root";
     private String password = "123456";
 
@@ -60,10 +60,10 @@ public class DataTransporter {
         return connection;
     }
 
-    private CsvReader readDataFromFile(String filename){
+    private CsvReader readDataFromFile(String filename,String encode){
         CsvReader csvReader = null;
         try {
-            csvReader = new CsvReader(new FileInputStream("databases/"+filename), Charset.forName("utf-8"));
+            csvReader = new CsvReader(new FileInputStream("databases/"+filename), Charset.forName(encode));
             csvReader.readHeaders();
         } catch (IOException e) {
             e.printStackTrace();
@@ -71,8 +71,8 @@ public class DataTransporter {
         return csvReader;
     }
 
-    private StringBuilder insertFromCsv(Connection connection, String filename) throws IOException, SQLException {
-        CsvReader csvReader1 = readDataFromFile(filename);
+    private StringBuilder insertFromCsv(Connection connection, String filename,String encode) throws IOException, SQLException {
+        CsvReader csvReader1 = readDataFromFile(filename,encode);
         String headers[] = csvReader1.getHeaders();
         String table = filename.split("\\.")[0];
         String insertSQL = generateInsertSQL(headers,table);
@@ -106,11 +106,20 @@ public class DataTransporter {
             String sqlTemp = "SELECT * FROM " + table;
             ResultSet resTemp = statement.executeQuery(sqlTemp);
             ResultSetMetaData rm = resTemp.getMetaData();
-            int length = rm.getColumnCount();
-            String headers[] = new String[length];
-            for (int i=0;i<length;i++){
-                headers[i] = rm.getColumnName(i+1);
+//            int length = rm.getColumnCount();
+//            String headers[] = new String[length];
+//            for (int i=0;i<length;i++){
+//                headers[i] = rm.getColumnName(i+1);
+//            }
+            Statement mysqlStatement = connection.createStatement();
+            ResultSet mysqlResTemp = mysqlStatement.executeQuery(sqlTemp);
+            ResultSetMetaData mysqlRm = mysqlResTemp.getMetaData();
+            int mysqlLength = mysqlRm.getColumnCount();
+            String headers[] = new String[mysqlLength];
+            for (int i=0;i<mysqlLength;i++){
+                headers[i] = mysqlRm.getColumnName(i+1);
             }
+
             String insertSQL = generateInsertSQL(headers,table);
             PreparedStatement preInsert = connection.prepareStatement(insertSQL);
             while (resTemp.next()) {
@@ -120,7 +129,14 @@ public class DataTransporter {
                 try {
                     preInsert.execute();
                 }catch (SQLException e){
-                    dupliteSql.append(preInsert).append("\n");
+                    int errorCode = e.getErrorCode();
+
+                    if (errorCode ==1062) {
+                        dupliteSql.append(preInsert).append("\n");
+                    }
+                    else if (errorCode ==1054) {
+                        System.out.println(e.getMessage());
+                    }
                 }
             }
         }
@@ -172,16 +188,18 @@ public class DataTransporter {
                     case "1":
                         System.out.println("请输入csv文件名：");
                         String csvFilename = input.nextLine();
-                        StringBuilder temp1= insertFromCsv(connection,csvFilename);
-                        System.out.println("数据导入成功！其中重复的有：");
+                        System.out.println("请输入文件编码： ");
+                        String encode = input.nextLine();
+                        StringBuilder temp1= insertFromCsv(connection,csvFilename,encode);
                         System.out.println(temp1);
+                        System.out.println("数据导入成功！其中上面打印出的是因为主键冲突未插入成功的");
                         break;
                     case "2":
                         System.out.println("请输入sqlite数据库文件名称：");
                         String sqliteFilename = input.nextLine();
                         StringBuilder temp2= insertFromSQLite(connection,sqliteFilename);
-                        System.out.println("数据导入成功！其中重复的有：");
                         System.out.println(temp2);
+                        System.out.println("数据导入成功！其中上面打印出的是因为主键冲突未插入成功的");
                         break;
                     case "3":
                         System.exit(0);
