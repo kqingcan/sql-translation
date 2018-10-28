@@ -1,7 +1,7 @@
 #使用说明
 #### **16302010033 孔庆灿**
 -----
-1、 首先把要导入的数据库文件和初始化数据表的SQL语句文本文件放到dataTransport.jar的同级目录下
+1、 首先把要导入的数据库文件放到databases文件夹下，然后和初始化数据表的SQL语句文本文件放到dataTransport.jar的同级目录下
 
 2、 通过java -jar dataTransport.jar 命令运行
 
